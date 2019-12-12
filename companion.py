@@ -23,6 +23,7 @@ import time
 import requests
 import uuid
 import pyinotify
+import os
 
 ALLOWED_SITE = "Übersicht" # please replace with your confluence site name to allow access
 DOWNLOAD_DIR = "temp" # temp dir for downloading files
@@ -111,8 +112,8 @@ async def handleJson(websocket, requestjson):
 
         # set up file watcher
         wm = pyinotify.WatchManager()
-        wm.add_watch(filePath, pyinotify.IN_MODIFY)
-        notifier = pyinotify.ThreadedNotifier(wm, FileChangedHandler(dict={"websocket":websocket, "appId":appId, "transId":transId}))
+        wm.add_watch(DOWNLOAD_DIR, pyinotify.ALL_EVENTS)
+        notifier = pyinotify.ThreadedNotifier(wm, FileChangedHandler(dict={"websocket":websocket, "appId":appId, "transId":transId, "filePath":filePath}))
         notifier.start()
 
         # start application
@@ -195,21 +196,25 @@ class FileChangedHandler(pyinotify.ProcessEvent):
         self._websocket = dict["websocket"]
         self._appId = dict["appId"]
         self._transId = dict["transId"]
+        self._filePath = dict["filePath"]
+
+    def process_IN_CLOSE(self, event):
+        self.process_IN_MODIFY(event=event)
 
     def process_IN_MODIFY(self, event):
-        print("file changed: " + event.pathname)
-
-        # inform confluence about the changes
-        responsejson = {
-            "eventName": "file-change-detected",
-            "type": "event",
-            "payload": self._appId,
-            "transactionID": self._transId
-        }
-        self._loop = asyncio.new_event_loop()
-        task = self._loop.create_task(self._websocket.send(json.dumps(responsejson)))
-        self._loop.run_until_complete(task)
-        print("> " + json.dumps(responsejson))
+        print("file changed: " + event.pathname + " (watching for: " + os.path.abspath(self._filePath) + ")")
+        if(os.path.abspath(self._filePath) == event.pathname):
+            # inform confluence about the changes
+            responsejson = {
+                "eventName": "file-change-detected",
+                "type": "event",
+                "payload": self._appId,
+                "transactionID": self._transId
+            }
+            self._loop = asyncio.new_event_loop()
+            task = self._loop.create_task(self._websocket.send(json.dumps(responsejson)))
+            self._loop.run_until_complete(task)
+            print("> " + json.dumps(responsejson))
 
 async def companionHandler(websocket, path):
     while(True):
