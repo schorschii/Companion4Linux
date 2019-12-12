@@ -104,12 +104,6 @@ async def handleJson(websocket, requestjson):
         }
         await send(websocket, json.dumps(responsejson))
 
-        # get application path via xdg-mime from command line
-        mimetype = check_output(["xdg-mime", "query", "filetype", filePath])
-        application = check_output(["xdg-mime", "query", "default", mimetype.decode("utf-8").strip()])
-        execinfo = check_output(["grep", "-m1", "^Exec=", "/usr/share/applications/"+application.decode("utf-8").strip()])
-        executable = execinfo.decode("utf-8").replace("Exec=","").replace("%F","").strip()
-
         # set up file watcher
         wm = pyinotify.WatchManager()
         wm.add_watch(DOWNLOAD_DIR, pyinotify.ALL_EVENTS)
