@@ -21,13 +21,17 @@ import urllib.request
 import subprocess
 import time
 import requests
+import uuid
 
-ALLOWED_SITE = "Confluence" # please replace with your confluence site name to allow access
-TRANSACTION_ID = "406905c8-13f5-42b1-a74f-4382f03a6053" # static transaction id
+ALLOWED_SITE = "Übersicht" # please replace with your confluence site name to allow access
+DOWNLOAD_DIR = "temp" # temp dir for downloading files
+
 FILES = [] # temp storage for downloaded file metadata
 
 async def handleJson(websocket, requestjson):
     global FILES
+    global DOWNLOAD_DIR
+    global ALLOWED_SITE
     responsejson = {}
     if(requestjson["type"] == "authentication"):
         if(requestjson["payload"]["payload"]["siteTitle"] == ALLOWED_SITE):
@@ -47,13 +51,15 @@ async def handleJson(websocket, requestjson):
         await send(websocket, json.dumps(responsejson))
 
     elif(requestjson["type"] == "new-transaction" and requestjson["payload"]["transactionType"] == "file"):
+        newUuid = str(uuid.uuid4())
+        print("new uuid: "+newUuid)
         responsejson = {
             "requestID": requestjson["requestID"],
-            "payload": TRANSACTION_ID
+            "payload": newUuid
         }
         await send(websocket, json.dumps(responsejson))
 
-    elif(requestjson["transactionID"] == TRANSACTION_ID and requestjson["type"] == "list-apps"):
+    elif(requestjson["type"] == "list-apps"):
         responsejson = {
             "requestID": requestjson["requestID"],
             "payload": [{
@@ -65,11 +71,12 @@ async def handleJson(websocket, requestjson):
         }
         await send(websocket, json.dumps(responsejson))
 
-    elif(requestjson["transactionID"] == TRANSACTION_ID and requestjson["type"] == "launch-file-in-app"):
+    elif(requestjson["type"] == "launch-file-in-app"):
         appId = requestjson["payload"]["applicationID"]
         transId = requestjson["transactionID"]
         fileUrl = requestjson["payload"]["fileURL"]
         fileName = requestjson["payload"]["fileName"]
+        filePath = DOWNLOAD_DIR + "/" + fileName
 
         # store file info for further requests (upload)
         FILES.append({"transId":transId, "fileName":fileName})
@@ -84,7 +91,7 @@ async def handleJson(websocket, requestjson):
         await send(websocket, json.dumps(responsejson))
 
         # start download
-        urllib.request.urlretrieve(fileUrl, fileName)
+        urllib.request.urlretrieve(fileUrl, filePath)
 
         # inform confluence that the download finished
         responsejson = {
@@ -96,13 +103,13 @@ async def handleJson(websocket, requestjson):
         await send(websocket, json.dumps(responsejson))
 
         # get application path via xdg-mime from command line
-        mimetype = check_output(["xdg-mime", "query", "filetype", fileName])
+        mimetype = check_output(["xdg-mime", "query", "filetype", filePath])
         application = check_output(["xdg-mime", "query", "default", mimetype.decode("utf-8").strip()])
         execinfo = check_output(["grep", "-m1", "^Exec=", "/usr/share/applications/"+application.decode("utf-8").strip()])
         executable = execinfo.decode("utf-8").replace("Exec=","").replace("%F","").strip()
 
         # start application and wait until closed
-        subprocess.call([executable, fileName])
+        subprocess.call([executable, filePath])
         print("editing ended")
 
         # inform confluence about the changes
@@ -114,7 +121,7 @@ async def handleJson(websocket, requestjson):
         }
         await send(websocket, json.dumps(responsejson))
 
-    elif(requestjson["transactionID"] == TRANSACTION_ID and requestjson["type"] == "upload-file-in-app"):
+    elif(requestjson["type"] == "upload-file-in-app"):
         transId = requestjson["transactionID"]
         fileUrl = requestjson["payload"]["uploadUrl"]
 
@@ -124,6 +131,7 @@ async def handleJson(websocket, requestjson):
             if(f["transId"] == transId):
                 fileName = f["fileName"]
                 break
+        filePath = DOWNLOAD_DIR + "/" + fileName
 
         # inform confluence that upload started
         responsejson = {
@@ -149,7 +157,7 @@ async def handleJson(websocket, requestjson):
             "X-Atlassian-Token": "nocheck"
             #"User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) AtlassianCompanion/0.6.2 Chrome/61.0.3163.100 Electron/2.1.0-unsupported.20180809 Safari/537.36"
         }
-        with open(fileName, 'rb') as f:
+        with open(filePath, 'rb') as f:
             r = requests.post(
                 fileUrl,
                 files={
