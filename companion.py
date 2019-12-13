@@ -137,6 +137,7 @@ async def handleJson(websocket, requestjson):
         }
         await send(websocket, json.dumps(responsejson))
 
+        # now upload the modified file
         print("Now uploading " + fileName + " to: " + fileUrl)
         parsed_uri = urlparse(fileUrl)
         host = '{uri.netloc}'.format(uri=parsed_uri)
@@ -192,9 +193,15 @@ class FileChangedHandler(pyinotify.ProcessEvent):
         self._transId = dict["transId"]
         self._filePath = dict["filePath"]
 
+    # IN_CLOSE to support FreeOffice
+    # (FreeOffice does not modify the file but creates a temporary file,
+    # then deletes the original and renames the temp file to the original file name.
+    # That's why IN_MODIFY is not called when using FreeOffice.)
     def process_IN_CLOSE(self, event):
         self.process_IN_MODIFY(event=event)
 
+    # IN_MODIFY to support LibreOffice
+    # (LibreOffice modifies the file directly.)
     def process_IN_MODIFY(self, event):
         print("file changed: " + event.pathname + " (watching for: " + os.path.abspath(self._filePath) + ")")
         if(os.path.abspath(self._filePath) == event.pathname):
