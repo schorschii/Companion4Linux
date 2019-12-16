@@ -24,6 +24,7 @@ import requests
 import uuid
 import pyinotify
 import os
+import hashlib
 
 ALLOWED_SITE = "Übersicht" # please replace with your confluence site name to allow access
 DOWNLOAD_DIR = "temp" # temp dir for downloading files
@@ -80,9 +81,6 @@ async def handleJson(websocket, requestjson):
         fileName = requestjson["payload"]["fileName"]
         filePath = DOWNLOAD_DIR + "/" + fileName
 
-        # store file info for further requests (upload)
-        FILES.append({"transId":transId, "fileName":fileName})
-
         # inform confluence about that the download started
         responsejson = {
             "eventName": "file-download-start",
@@ -95,6 +93,9 @@ async def handleJson(websocket, requestjson):
         # start download
         urllib.request.urlretrieve(fileUrl, filePath)
 
+        # store file info for further requests (upload)
+        FILES.append({"transId":transId, "fileName":fileName})
+
         # inform confluence that the download finished
         responsejson = {
             "eventName": "file-downloaded",
@@ -106,8 +107,16 @@ async def handleJson(websocket, requestjson):
 
         # set up file watcher
         wm = pyinotify.WatchManager()
-        wm.add_watch(DOWNLOAD_DIR, pyinotify.ALL_EVENTS)
-        notifier = pyinotify.ThreadedNotifier(wm, FileChangedHandler(dict={"websocket":websocket, "appId":appId, "transId":transId, "filePath":filePath}))
+        wm.add_watch(DOWNLOAD_DIR, pyinotify.IN_MODIFY | pyinotify.IN_CLOSE_WRITE)
+        notifier = pyinotify.ThreadedNotifier(wm,
+            FileChangedHandler( dict={
+                "websocket":websocket,
+                "appId":appId,
+                "transId":transId,
+                "filePath":filePath,
+                "fileMd5":md5(filePath)
+            })
+        )
         notifier.start()
 
         # start application
@@ -191,31 +200,38 @@ class FileChangedHandler(pyinotify.ProcessEvent):
         self._websocket = dict["websocket"]
         self._appId = dict["appId"]
         self._transId = dict["transId"]
-        self._filePath = dict["filePath"]
+        self._filePath = os.path.abspath(dict["filePath"])
+        self._fileMd5 = dict["fileMd5"]
 
     # IN_CLOSE to support FreeOffice
     # (FreeOffice does not modify the file but creates a temporary file,
     # then deletes the original and renames the temp file to the original file name.
     # That's why IN_MODIFY is not called when using FreeOffice.)
-    def process_IN_CLOSE(self, event):
+    def process_IN_CLOSE_WRITE(self, event):
         self.process_IN_MODIFY(event=event)
 
     # IN_MODIFY to support LibreOffice
     # (LibreOffice modifies the file directly.)
     def process_IN_MODIFY(self, event):
-        print("file changed: " + event.pathname + " (watching for: " + os.path.abspath(self._filePath) + ")")
-        if(os.path.abspath(self._filePath) == event.pathname):
-            # inform confluence about the changes
-            responsejson = {
-                "eventName": "file-change-detected",
-                "type": "event",
-                "payload": self._appId,
-                "transactionID": self._transId
-            }
-            self._loop = asyncio.new_event_loop()
-            task = self._loop.create_task(self._websocket.send(json.dumps(responsejson)))
-            self._loop.run_until_complete(task)
-            print("> " + json.dumps(responsejson))
+        if(self._filePath == event.pathname):
+            print("matching file event: " + event.pathname)
+            newFileMd5 = md5(event.pathname)
+            if(self._fileMd5 == newFileMd5):
+                print("-> file content not changed, ingnoring")
+            else:
+                print("-> file content changed, inform confluence")
+                self._fileMd5 = newFileMd5
+                # inform confluence about the changes
+                responsejson = {
+                    "eventName": "file-change-detected",
+                    "type": "event",
+                    "payload": self._appId,
+                    "transactionID": self._transId
+                }
+                self._loop = asyncio.new_event_loop()
+                task = self._loop.create_task(self._websocket.send(json.dumps(responsejson)))
+                self._loop.run_until_complete(task)
+                print("> " + json.dumps(responsejson))
 
 async def companionHandler(websocket, path):
     while(True):
@@ -226,6 +242,13 @@ async def companionHandler(websocket, path):
 async def send(websocket, response):
     await websocket.send(response)
     print(f"> {response}")
+
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 ssl_context.load_cert_chain('demo-cert/companion.crt', 'demo-cert/companion.key')
