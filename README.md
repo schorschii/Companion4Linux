@@ -6,7 +6,12 @@ With the Companion App you can [edit files in Atlassian Confluence](https://conf
 
 This script is currently in beta. Contributions welcome. Please also tell me if the script just works fine with your confluence installation and linux distribution.
 
-## Installation (Ubuntu/Mint)
+## Debian Package Installation (Debian/Ubuntu/Mint)
+1. Download and install the `.deb` package from the latest release on Github.
+2. Import the generated CA certificate `/usr/share/companion/myCA.pem` in your browser. Please refer to the [instructions below](#importing-the-ca-certificate) how to import the CA certificate.
+3. After installation please log out and log in again. The script then starts automatically.
+
+## Manual Installation (Debian/Ubuntu/Mint)
 1. Install required Python packages
 ```bash
 apt install python3-pip python3-distutils
