@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Companion App for Linux
+Exec=/opt/companion-linux/start.sh
+Terminal=false

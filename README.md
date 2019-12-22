@@ -26,7 +26,10 @@ chmod +x companion.py
 ./companion.py
 ```
 
-Hint: you can replace the cert paths in the script with absolute paths and put `start.sh` in your autostart.
+Further hints:
+- You can replace the cert paths in the script with absolute paths.
+- You can put `start.sh` in your personal autostart.
+- You can copy `companion.desktop` into `/etc/xdg/autostart` to install it in autostart for all users. Please do not forget to adjust the script path in the `companion.desktop` file.
 
 ---
 
@@ -82,10 +85,3 @@ Go to "Settings" -> "Certificates" -> "Authorities" -> "Import" and choose the "
 
 #### Firefox
 Go to "Preferences" -> "Privacy & Security" -> "View Certificates" -> "Authorities" -> "Import" and choose the "myCA.pem" file.
-
-#### Debian
-System-wide for all browsers:
-```
-sudo cp ca-root.pem /usr/share/ca-certificates/myca-root.crt
-sudo dpkg-reconfigure ca-certificates
-```
