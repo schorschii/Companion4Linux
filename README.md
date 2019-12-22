@@ -19,14 +19,14 @@ pip3 install websockets
 
 3. Edit `companion.py` and change `ALLOWED_SITE = "Confluence"` to your site name. If the defined name does not match the confluence server name, all requests are rejected. If rejected, the script prints out the site name, so you can adjust it.
 
-4. Change the working directory (important, otherwise `companion.py` won't find the cert and key file) and start the script. Ensure that you have write permissions in the `temp` directory.
+4. Set execution rights and start the script.
 ```bash
-cd companion
 chmod +x companion.py
-./companion.py
+./start.sh
 ```
 
 Further hints:
+- Temporary files will be saved in `~/.cache/companion/tmp`. Please ensure that you have write permissions in that directory.
 - You can replace the cert paths in the script with absolute paths.
 - You can put `start.sh` in your personal autostart.
 - You can copy `companion.desktop` into `/etc/xdg/autostart` to install it in autostart for all users. Please do not forget to adjust the script path in the `companion.desktop` file.
