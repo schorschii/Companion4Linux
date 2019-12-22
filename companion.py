@@ -1,13 +1,12 @@
 #!/usr/bin/python3
 
 # companion.py
+# GNU GENERAL PUBLIC LICENSE, Version 3
 # (c) Georg Sieber 2019
 # github.com/schorschii
 
 # this script emulates the functionality of the Atlassian Companion App (Windows/Mac) for usage on Linux clients
 # please see README.md for installation instructions
-
-# IMPORTANT NOTE: this script is currently EXPERIMENTAL and therefore not intended for productive usage!
 
 
 from subprocess import check_output
@@ -27,7 +26,8 @@ import os
 import hashlib
 
 ALLOWED_SITE = "Confluence" # please replace with your confluence site name to allow access
-DOWNLOAD_DIR = "temp" # temp dir for downloading files
+DOWNLOAD_DIR = str(pathlib.Path.home()) + "/.cache/companion/tmp" # temp dir for downloading files
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 FILES = [] # temp storage for downloaded file metadata
 
