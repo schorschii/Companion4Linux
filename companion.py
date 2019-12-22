@@ -26,7 +26,7 @@ import pyinotify
 import os
 import hashlib
 
-ALLOWED_SITE = "Übersicht" # please replace with your confluence site name to allow access
+ALLOWED_SITE = "Confluence" # please replace with your confluence site name to allow access
 DOWNLOAD_DIR = "temp" # temp dir for downloading files
 
 FILES = [] # temp storage for downloaded file metadata

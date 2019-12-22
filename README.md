@@ -4,7 +4,7 @@ This Python script emulates the functionality of the [Atlassian Companion App](h
 
 With the Companion App you can [edit files in Atlassian Confluence](https://confluence.atlassian.com/conf612/edit-files-958777653.html) with your preferred (local installed) desktop application.  
 
-This script is currently EXPERIMENTAL and therefore not intended for productive usage! Contributions welcome.
+This script is currently in beta. Contributions welcome. Please also tell me if the script just works fine with your confluence installation and linux distribution.
 
 ## Installation (Ubuntu/Mint)
 1. Install required Python packages
@@ -35,10 +35,10 @@ Hint: you can replace the cert paths in the script with absolute paths and put `
 You can generate your own CA and Companion certificate so you don't have to trust the demo CA.
 ```bash
 # generate CA private key
-openssl genrsa -aes256 -out ca-key.pem 2048
+openssl genrsa -aes256 -out myCA.key 2048
 
 # generate CA certificate
-openssl req -x509 -new -nodes -extensions v3_ca -key ca-key.pem -days 1024 -out ca-root.pem -sha512
+openssl req -x509 -new -nodes -extensions v3_ca -key myCA.key -days 3650 -out myCA.pem -sha512
 
 # create openssl config file, content see below
 nano req.conf
@@ -50,7 +50,7 @@ openssl genrsa -out companion.key 4096
 openssl req -new -key companion.key -out companion.csr -sha512 -config req.conf
 
 # sign request = create companion certificate
-openssl x509 -req -in companion.csr -CA ca-root.pem -CAkey ca-key.pem -CAcreateserial -out companion.crt -days 1024 -sha512 -extensions req_cert_extensions -extfile req.conf
+openssl x509 -req -in companion.csr -CA myCA.pem -CAkey myCA.key -CAcreateserial -out companion.crt -days 3650 -sha512 -extensions req_cert_extensions -extfile req.conf
 ```
 req.conf:
 ```
