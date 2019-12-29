@@ -14,7 +14,7 @@ This script is currently in beta. Contributions welcome. Please also tell me if 
 ## Manual Installation (Debian/Ubuntu/Mint)
 1. Install required Python packages
 ```bash
-apt install python3-pip python3-distutils
+apt install python3-pip python3-distutils python3-pyinotify
 pip3 install websockets
 ```
 
