@@ -13,7 +13,7 @@ from subprocess import check_output
 from urllib.parse import urlparse
 import asyncio
 import pathlib
-import ssl
+#import ssl
 import websockets
 import json
 import urllib.request
@@ -250,11 +250,11 @@ def md5(fname):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
 
-ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_context.load_cert_chain('demo-cert/companion.crt', 'demo-cert/companion.key')
+#ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+#ssl_context.load_cert_chain('demo-cert/companion.crt', 'demo-cert/companion.key')
 
 start_server = websockets.serve(
-    companionHandler, "localhost", 22274, ssl=ssl_context
+    companionHandler, "localhost", 31459#, ssl=ssl_context
 )
 
 asyncio.get_event_loop().run_until_complete(start_server)
