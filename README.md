@@ -22,7 +22,7 @@ pip3 install websockets
 3. Set execution rights and start the script.
 ```bash
 chmod +x companion.py
-./companion.sh
+./companion.py
 ```
 
 Further hints:
