@@ -22,13 +22,12 @@ pip3 install websockets
 3. Set execution rights and start the script.
 ```bash
 chmod +x companion.py
-chmod +x start.sh
-./start.sh
+./companion.sh
 ```
 
 Further hints:
 - Temporary files will be saved in `~/.cache/companion/tmp`. Please ensure that you have write permissions in that directory.
-- You can put `start.sh` in your personal autostart.
+- You can put `companion.py` in your personal autostart.
 - You can copy `companion.desktop` into `/etc/xdg/autostart` to install it in autostart for all users. Please do not forget to adjust the script path in the `companion.desktop` file.
 
 ---
