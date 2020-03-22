@@ -9,24 +9,25 @@ This script is currently in beta. Contributions welcome. Please also tell me if 
 ## Debian Package Installation (Debian/Ubuntu/Mint)
 1. Download and install the `.deb` package from the latest release on Github.
 2. After installation please log out and log in again. The script then starts automatically.
+3. Open Confluence in your web browser, open a document and click on "Edit". The companion script will display a GUI dialog asking if you want to trust this site. Click "Yes". Now you can edit files.
 
 ## Manual Installation (Debian/Ubuntu/Mint)
 1. Install required Python packages
 ```bash
-apt install python3-pip python3-distutils python3-pyinotify
+apt install python3-pip python3-distutils python3-pyinotify python3-wxgtk4.0
 pip3 install websockets
 ```
 
-2. Edit `companion.py` and change `ALLOWED_SITE = "Confluence"` to your site name. If the defined name does not match the confluence server name, all requests are rejected. If rejected, the script prints out the site name, so you can adjust it.
-
-3. Set execution rights and start the script.
+2. Set execution rights and start the script.
 ```bash
 chmod +x companion.py
 ./companion.py
 ```
 
+3. Open Confluence in your web browser, open a document and click on "Edit". The companion script will display a GUI dialog asking if you want to trust this site. Click "Yes". Now you can edit files.
+
 Further hints:
-- Temporary files will be saved in `~/.cache/companion/tmp`. Please ensure that you have write permissions in that directory.
+- Temporary files will be saved in `~/.cache/companion/tmp` and config files in `~/.config/companion`. Please ensure that you have write permissions in that directories.
 - You can put `companion.py` in your personal autostart.
 - You can copy `companion.desktop` into `/etc/xdg/autostart` to install it in autostart for all users. Please do not forget to adjust the script path in the `companion.desktop` file.
 
