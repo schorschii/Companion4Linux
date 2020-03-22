@@ -2,7 +2,7 @@
 
 # companion.py
 # GNU GENERAL PUBLIC LICENSE, Version 3
-# (c) Georg Sieber 2019
+# (c) Georg Sieber 2020
 # github.com/schorschii
 
 # this script emulates the functionality of the Atlassian Companion App (Windows/Mac) for usage on Linux clients
@@ -13,7 +13,7 @@ from subprocess import check_output
 from urllib.parse import urlparse
 import asyncio
 import pathlib
-#import ssl
+import pickle
 import websockets
 import json
 import urllib.request
@@ -24,20 +24,45 @@ import uuid
 import pyinotify
 import os
 import hashlib
+import wx
 
-ALLOWED_SITE = "Confluence" # please replace with your confluence site name to allow access
-DOWNLOAD_DIR = str(pathlib.Path.home()) + "/.cache/companion/tmp" # temp dir for downloading files
+DOWNLOAD_DIR  = str(pathlib.Path.home()) + "/.cache/companion/tmp" # temp dir for downloading files
+CONFIG_DIR    = str(pathlib.Path.home()) + "/.config/companion" # config/settings dir
+ALLOWED_FILE  = CONFIG_DIR + "/" + "allowed" # file for allowed sites
+
+FILES         = [] # temp storage for downloaded file metadata
+ALLOWED_SITES = [] # stores allowed site names
+
+# create directories
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+os.makedirs(CONFIG_DIR, exist_ok=True)
 
-FILES = [] # temp storage for downloaded file metadata
+# load config
+if os.path.isfile(ALLOWED_FILE):
+    ALLOWED_SITES = pickle.load( open(ALLOWED_FILE, "rb") )
+    print(ALLOWED_SITES)
+
+def askAllowSite(sitename):
+    global ALLOWED_SITES
+    global ALLOWED_FILE
+    app = wx.App()
+    dlg = wx.MessageDialog(None, "Do you want to trust »"+sitename+"«?", "Allow New Confluence Site", wx.YES_NO | wx.ICON_QUESTION | wx.STAY_ON_TOP)
+    dlg.Center(); result = dlg.ShowModal()
+    frame = wx.Frame(None); frame.Show(); frame.Close(); app.MainLoop()
+    if result == wx.ID_YES:
+        ALLOWED_SITES.append(sitename) # add to allowed site array
+        pickle.dump( ALLOWED_SITES, open(ALLOWED_FILE, "wb") ) # save to file
+        return True; # report success
+    return False;
 
 async def handleJson(websocket, requestjson):
     global FILES
     global DOWNLOAD_DIR
-    global ALLOWED_SITE
+    global ALLOWED_SITES
     responsejson = {}
     if(requestjson["type"] == "authentication"):
-        if(requestjson["payload"]["payload"]["siteTitle"] == ALLOWED_SITE):
+        currentSiteTitle = requestjson["payload"]["payload"]["siteTitle"]
+        if(currentSiteTitle in ALLOWED_SITES or askAllowSite(currentSiteTitle)):
             print("ACCEPTED SITE: " + requestjson["payload"]["payload"]["siteTitle"])
             responsejson = {
                 "requestID": requestjson["requestID"],
