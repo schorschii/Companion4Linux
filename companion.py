@@ -58,7 +58,7 @@ def askAllowSite(sitename):
         return True; # report success
     return False;
 
-async def handleJson(websocket, requestjson):
+async def handleJson(websocket, requestjson, allowed):
     global FILES
     global DOWNLOAD_DIR
     global ALLOWED_SITES
@@ -75,27 +75,46 @@ async def handleJson(websocket, requestjson):
                     "requestID": requestjson["requestID"],
                     "type": "authentication-status",
                     "payload": "ACCEPTED"
-                    }
+                }
+                await send(websocket, json.dumps(responsejson))
+                return True
             else:
                 print("-> REJECTED SITE: " + requestjson["payload"]["payload"]["siteTitle"])
                 responsejson = {
                     "requestID": requestjson["requestID"],
                     "type": "authentication-status",
                     "payload": "REJECTED"
-                    }
-            await send(websocket, json.dumps(responsejson))
+                }
+                await send(websocket, json.dumps(responsejson))
+                print("-> Close websocket")
+                websocket.close()
+                return False
 
         # cloud hosted
         elif(provider == "jwt"):
-            print("-> ACCEPTED JWT: " + requestjson["payload"]["payload"])
-            responsejson = {
-                "requestID": requestjson["requestID"],
-                "type": "authentication-status",
-                "payload": "ACCEPTED"
-            }
-            await send(websocket, json.dumps(responsejson))
+            currenSiteOrigin = json.loads(base64ToString(requestjson["payload"]["payload"].split(".")[1]))["confluence_origin"]
+            if(currenSiteOrigin in ALLOWED_SITES or askAllowSite(currenSiteOrigin)):
+                print("-> ACCEPTED JWT: " + requestjson["payload"]["payload"])
+                responsejson = {
+                    "requestID": requestjson["requestID"],
+                    "type": "authentication-status",
+                    "payload": "ACCEPTED"
+                }
+                await send(websocket, json.dumps(responsejson))
+                return True
+            else:
+                print("-> REJECTED JWT: " + requestjson["payload"]["payload"])
+                responsejson = {
+                    "requestID": requestjson["requestID"],
+                    "type": "authentication-status",
+                    "payload": "REJECTED"
+                }
+                await send(websocket, json.dumps(responsejson))
+                print("-> Close websocket")
+                websocket.close()
+                return False
 
-    elif(requestjson["type"] == "new-transaction" and requestjson["payload"]["transactionType"] == "file"):
+    elif(allowed and requestjson["type"] == "new-transaction" and requestjson["payload"]["transactionType"] == "file"):
         newUuid = str(uuid.uuid4())
         print("-> Start new transaction with uuid: "+newUuid)
         responsejson = {
@@ -104,7 +123,7 @@ async def handleJson(websocket, requestjson):
         }
         await send(websocket, json.dumps(responsejson))
 
-    elif(requestjson["type"] == "list-apps"):
+    elif(allowed and requestjson["type"] == "list-apps"):
         responsejson = {
             "requestID": requestjson["requestID"],
             "payload": [{
@@ -116,7 +135,7 @@ async def handleJson(websocket, requestjson):
         }
         await send(websocket, json.dumps(responsejson))
 
-    elif(requestjson["type"] == "launch-file-in-app"):
+    elif(allowed and requestjson["type"] == "launch-file-in-app"):
         appId = requestjson["payload"]["applicationID"]
         transId = requestjson["transactionID"]
         fileUrl = requestjson["payload"]["fileURL"]
@@ -166,7 +185,7 @@ async def handleJson(websocket, requestjson):
         subprocess.call(["xdg-open", filePath])
 
     # upload handler for self-hosted instances
-    elif(requestjson["type"] == "upload-file-in-app"):
+    elif(allowed and requestjson["type"] == "upload-file-in-app"):
         transId = requestjson["transactionID"]
         fileUrl = requestjson["payload"]["uploadUrl"]
 
@@ -240,7 +259,7 @@ async def handleJson(websocket, requestjson):
         await send(websocket, json.dumps(responsejson))
 
     # upload handler for cloud-hosted instances
-    elif(requestjson["type"] == "request-upload-token"):
+    elif(allowed and requestjson["type"] == "request-upload-token"):
         # yummy, we got an upload token!
         transId = requestjson["transactionID"]
         uploadToken = requestjson["payload"]
@@ -433,10 +452,13 @@ class FileChangedHandler(pyinotify.ProcessEvent):
                     self._loop.run_until_complete(task)
 
 async def companionHandler(websocket, path):
+    allowed = False # indicates if the current connection is authenticated
     while(True):
         request = await websocket.recv()
         print(f"< {request}")
-        await handleJson( websocket, json.loads(request) )
+        result = await handleJson( websocket, json.loads(request), allowed )
+        if(result == True or result == False): # result can also be None - no change in this case
+            allowed = result
 
 async def send(websocket, response):
     await websocket.send(response)
