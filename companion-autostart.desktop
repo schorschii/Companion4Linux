@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Companion App for Linux Autostart
+Exec=/usr/bin/companion.py
+Terminal=false

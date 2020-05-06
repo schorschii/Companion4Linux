@@ -5,8 +5,8 @@
 # (c) Georg Sieber 2020
 # github.com/schorschii
 
-# this script emulates the functionality of the Atlassian Companion App (Windows/Mac) for usage on Linux clients
-# please see README.md for installation instructions
+# This script emulates the functionality of the Atlassian Companion App (Windows/Mac) for usage on Linux clients.
+# Please see README.md for installation instructions.
 
 
 from subprocess import check_output

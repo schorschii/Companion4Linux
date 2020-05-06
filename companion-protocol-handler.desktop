@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Unofficial Atlassian Companion Protocol Handler
+Exec=/usr/bin/companion2.py %u
+StartupNotify=false
+MimeType=x-scheme-handler/atlassian-companion;
+NoDisplay=true
+
+# execute `update-desktop-database` after copying into /usr/share/applications

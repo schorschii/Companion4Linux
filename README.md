@@ -18,21 +18,40 @@ apt install python3-pip python3-distutils python3-pyinotify python3-wxgtk4.0
 pip3 install websockets
 ```
 
-2. Set execution rights and start the script.
+2. Set execution rights and copy `companion2.py` (for Confluence 7.4.0 and newer).
 ```bash
-chmod +x companion.py
-./companion.py
+chmod +x companion2.py
+cp companion2.py /usr/bin
+cp companion-protocol-handler.desktop /usr/share/applications
+update-desktop-database
 ```
 
-3. Open Confluence in your web browser, open a document and click on "Edit". The companion script will display a GUI dialog asking if you want to trust this site. Click "Yes". Now you can edit files.
+3. Set execution rights, copy and start `companion.py` (for older Confluence versions).
+```bash
+chmod +x companion.py
+cp companion.py /usr/bin
+cp companion-autostart.desktop /etc/xdg/autostart
+nohup /usr/bin/companion.py &
+```
 
-Further hints:
+4. Open Confluence in your web browser, open a document and click on "Edit".  
+In Confluence 7.4 and newer, the browser will ask you if you want to open the Companion app. In older versions, the companion script will display a GUI dialog asking if you want to trust this site. Click "Yes". Now you can edit files.
+
+**Further hints:**
 - Temporary files will be saved in `~/.cache/companion/tmp` and config files in `~/.config/companion`. Please ensure that you have write permissions in that directories.
-- You can put `companion.py` in your personal autostart.
-- You can copy `companion.desktop` into `/etc/xdg/autostart` to install it in autostart for all users. Please do not forget to adjust the script path in the `companion.desktop` file.
 
 ---
 
-## Installation Details
-### Generating an own Certificate
-**Update:** SSL encryption between Browser and Companion App (through atlassian-domain-for-localhost-connections-only.com) is not supported anymore as described [here](https://jira.atlassian.com/browse/CONFSERVER-59244?src=confmacro&_ga=2.138774577.300479270.1578747514-1264684236.1567087366). Confluence now uses a direct WebSocket connection to 127.0.0.1 (no domain name) without transport encryption.
+## Functionality
+There are 3 ways how the companion app works. "companion.py" handles case 2, "companion2.py" handles case 3 and case 1 is not supported anymore.
+
+### 1. Local Web Server With SSL Certificate
+The web browser connects via websocket to atlassian-domain-for-localhost-connections-only.com (which points to 127.0.0.1) where the companion app listens for requests.
+
+SSL encryption between Browser and Companion App (through atlassian-domain-for-localhost-connections-only.com) is not supported anymore as described [here](https://jira.atlassian.com/browse/CONFSERVER-59244?src=confmacro&_ga=2.138774577.300479270.1578747514-1264684236.1567087366).
+
+### 2. Local Web Server Without SSL
+The web browser connects via websocket to 127.0.0.1. This technology was replaced with a new technology (case 3) in Atlassian Companion App v1.0.0 / Confluence 7.4.0 in order to support terminal server environments (see [here](https://confluence.atlassian.com/doc/atlassian-companion-app-release-notes-958455712.html)).
+
+### 3. Via Protocol Scheme »atlassian-companion:«
+The companion app waits until called from browser with a command line argument like »atlassian-companion:{"link":"https://....}«.
