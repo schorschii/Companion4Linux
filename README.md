@@ -7,7 +7,7 @@ With the Companion App you can [edit files in Atlassian Confluence](https://conf
 This script is currently in beta. Contributions welcome. Please also tell me if the script just works fine with your confluence installation and linux distribution.
 
 ## Debian Package Installation (Debian/Ubuntu/Mint)
-1. Download and install the `.deb` package from the latest release on Github.
+1. Download and install the `.deb` package from the [latest release](https://github.com/schorschii/companion-linux/releases) on Github.
 2. After installation please log out and log in again. The script then starts automatically.
 3. Open Confluence in your web browser, open a document and click on "Edit". The companion script will display a GUI dialog asking if you want to trust this site. Click "Yes". Now you can edit files.
 
