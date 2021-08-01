@@ -167,6 +167,9 @@ def main():
         log("[MAIN]  Error: no valid '"+PROTOCOL_SCHEME+"' scheme parameter given.")
         exit(1)
 
+    # create temporary directory
+    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
     # parse given companion URL
     log("[HANDLE URL]  "+urlToHandle)
     protocolPayload = unquote(urlToHandle).replace(PROTOCOL_SCHEME, "")
