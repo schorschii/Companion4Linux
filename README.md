@@ -4,6 +4,8 @@ The Companion App for Linux is an inoffical port of the [Atlassian Companion App
 
 With the Companion App you can [edit files in Atlassian Confluence](https://confluence.atlassian.com/conf612/edit-files-958777653.html) with your preferred (local installed) desktop application. The companion app will automatically upload the file to Confluence if it changed on disk.  
 
+When reporting bugs, please append a detailed description of the error including which Confluence version you are using and whether you are running your own Confluence server or if you are using the cloud version.
+
 ## Debian Package Installation (Debian/Ubuntu/Mint)
 1. Download and install the `.deb` package from the [latest release](https://github.com/schorschii/companion-linux/releases) on Github.
 2. After installation please log out and log in again. The script then starts automatically.
