@@ -1,6 +1,6 @@
 # Confluence Companion App for Linux
 
-The Companion App for Linux is an inoffical port of the [Atlassian Companion App](https://confluence.atlassian.com/conf612/administering-the-atlassian-companion-app-958778510.html) (originally only available for Windows and MacOS) for usage on Linux clients. It is basically just a tiny python script (~400 lines).  
+The Companion App for Linux is an unoffical port of the [Atlassian Companion App](https://confluence.atlassian.com/conf612/administering-the-atlassian-companion-app-958778510.html) (originally only available for Windows and MacOS) for usage on Linux clients. It is basically just a tiny python script (~400 lines).  
 
 With the Companion App you can [edit files in Atlassian Confluence](https://confluence.atlassian.com/conf612/edit-files-958777653.html) with your preferred (local installed) desktop application. The companion app will automatically upload the file to Confluence if it changed on disk.  
 
