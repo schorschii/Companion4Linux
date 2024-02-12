@@ -9,8 +9,7 @@
 # Please see README.md for installation instructions.
 
 
-from urllib.parse import unquote
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 import urllib.request
 import pyinotify
 import pathlib
@@ -18,48 +17,32 @@ import hashlib
 import requests
 import subprocess
 import json
-import time
-import sys
-import os
-import wx
+import sys, os
 
 import gi
 gi.require_version('Notify', '0.7')
-from gi.repository import Notify
+gi.require_version('Gtk', '3.0')
+from gi.repository import Notify, Gtk
 
 
 APP_NAME        = "Companion App"
 PROTOCOL_SCHEME = "atlassian-companion:"
 DOWNLOAD_DIR    = str(pathlib.Path.home()) + "/.cache/companion/tmp" # temp dir for downloading files
 
-LOG_FILE        = None # enter a file path here to activate logging
-LOG_FILE_HANDLE = None
-
-# tiny logging function, because this script is invoked from the web browser, so we do not see the console output
-def log(str):
-    global LOG_FILE
-    global LOG_FILE_HANDLE
-    if(LOG_FILE == None or LOG_FILE == ""):
-        print(str)
-        return
-    if(LOG_FILE_HANDLE == None):
-        LOG_FILE_HANDLE = open(LOG_FILE, "a+")
-        LOG_FILE_HANDLE.write("\n\n")
-    LOG_FILE_HANDLE.write(str+"\n")
 
 # file change handler class
 class FileChangedHandler(pyinotify.ProcessEvent):
-    def my_init(self, dict):
-        self._fileUrl = dict["downloadUrl"]
-        self._uploadUrl = dict["uploadUrl"]
-        self._fileName = dict["fileName"]
-        self._filePath = os.path.abspath(dict["filePath"])
-        self._fileMd5 = dict["fileMd5"]
+    def my_init(self, downloadUrl, uploadUrl, fileName, filePath, fileMd5, **kwargs):
+        self._fileUrl = downloadUrl
+        self._uploadUrl = uploadUrl
+        self._fileName = fileName
+        self._filePath = os.path.abspath(filePath)
+        self._fileMd5 = fileMd5
 
-    # IN_CLOSE to support FreeOffice
-    # (FreeOffice does not modify the file but creates a temporary file,
-    # then deletes the original and renames the temp file to the original file name.
-    # That's why IN_MODIFY is not called when using FreeOffice.)
+    # IN_CLOSE to support Softmaker Office
+    # (Does not modify the file but creates a temporary file, then deletes
+    # the original and renames the temp file to the original file name.
+    # That's why IN_MODIFY is not called.)
     def process_IN_CLOSE_WRITE(self, event):
         self.process_IN_MODIFY(event=event)
 
@@ -67,16 +50,15 @@ class FileChangedHandler(pyinotify.ProcessEvent):
     # (LibreOffice modifies the file directly.)
     def process_IN_MODIFY(self, event):
         if(self._filePath == event.pathname):
-            log("[FILE EVENT]  matching file event: " + event.pathname)
             newFileMd5 = md5(event.pathname)
             if(self._fileMd5 == newFileMd5):
-                log("[FILE EVENT]  file content not changed, ignoring")
+                print("[CONTENT NOT CHANGED, IGNORING]  "+event.pathname)
             else:
-                log("[FILE EVENT]  file content changed, inform confluence")
+                print("[CONTENT CHANGED, INFORM CONFLUENCE]  "+event.pathname)
                 self._fileMd5 = newFileMd5
 
                 # now upload the modified file
-                log("[UPLOAD]  " + self._fileName + " to: " + self._uploadUrl)
+                print("[UPLOAD]  " + self._fileName + " to: " + self._uploadUrl)
                 parsed_uri = urlparse(self._uploadUrl)
                 host = '{uri.netloc}'.format(uri=parsed_uri)
                 origin = '{uri.scheme}://{uri.netloc}'.format(uri=parsed_uri)
@@ -97,8 +79,7 @@ class FileChangedHandler(pyinotify.ProcessEvent):
                         },
                         headers=headers
                     )
-                    log(result)
-                    log(result.text)
+                    print(result, result.text)
 
                     # show desktop notification
                     if(result.status_code == 200):
@@ -115,44 +96,15 @@ def md5(fname):
             hash.update(chunk)
     return hash.hexdigest()
 
-# companion window definition
-class CompanionWindow(wx.Frame):
-    def __init__(self, fileName):
-        self.fileName = fileName
-        style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX)
-        super(CompanionWindow, self).__init__(None, style=style)
-        self.InitUI()
+def endFileWatcher(notification, event):
+    if(hasattr(notification, "notifier")):
+        notification.notifier.stop()
+    Gtk.main_quit()
 
-    def InitUI(self):
-        # Window Content
-        panel = wx.Panel(self)
-        vbox = wx.BoxSizer(wx.VERTICAL)
-
-        label = wx.StaticText(panel, wx.ID_ANY, "Watching for changes in: " + self.fileName)
-        self.Bind(wx.EVT_BUTTON, self.OnClickClose, label)
-        vbox.Add(label, wx.ID_ANY, wx.EXPAND | wx.ALL, 20)
-
-        button = wx.Button(panel, wx.ID_ANY, "End Editing")
-        self.Bind(wx.EVT_BUTTON, self.OnClickClose, button)
-        vbox.Add(button, wx.ID_ANY, wx.EXPAND | wx.ALL, 20)
-
-        panel.SetSizer(vbox)
-
-        # Window Settings
-        self.SetSize(300, 200)
-        self.SetMinSize((300, 200))
-        self.SetTitle("Companion App")
-        self.AlignToBottomRight()
-
-    def AlignToBottomRight(self):
-        dw, dh = wx.DisplaySize()
-        w, h = self.GetSize()
-        x = dw - w
-        y = dh - h
-        self.SetPosition((x, y))
-
-    def OnClickClose(self, e):
-        self.Close()
+def notificationClosed(notification):
+    if(hasattr(notification, "notifier")):
+        notification.notifier.stop()
+    Gtk.main_quit()
 
 # main program
 def main():
@@ -164,68 +116,69 @@ def main():
         if(arg.startswith(PROTOCOL_SCHEME)):
             urlToHandle = arg
     if(urlToHandle == None):
-        log("[MAIN]  Error: no valid '"+PROTOCOL_SCHEME+"' scheme parameter given.")
+        print("[MAIN]  Error: no valid '"+PROTOCOL_SCHEME+"' scheme parameter given.")
         exit(1)
 
     # create temporary directory
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
     # parse given companion URL
-    log("[HANDLE URL]  "+urlToHandle)
+    print("[HANDLE URL]  "+urlToHandle)
     protocolPayload = unquote(urlToHandle).replace(PROTOCOL_SCHEME, "")
     protocolPayloadData = json.loads(protocolPayload)
-    log("[METADATA-LINK]  "+protocolPayloadData["link"])
+    print("[METADATA-LINK]  "+protocolPayloadData["link"])
 
     # download metadata from provided link
     try:
         metadataString = urllib.request.urlopen(protocolPayloadData["link"]).read()
         metadata = json.loads(metadataString)
     except Exception as e:
-        log("[GET METADATA ERROR]  "+str(e))
+        print("[ERROR]  "+str(e))
         exit(1)
-    log("[METADATA]  "+str(metadata))
+    print("[METADATA]  "+str(metadata))
 
     # start file download
     try:
         filePath = DOWNLOAD_DIR + "/" + metadata["fileName"]
-        log("[START DOWNLOAD TO]  "+filePath)
+        print("[DOWNLOAD]  "+metadata["downloadUrl"]+"  ->  "+filePath)
         urllib.request.urlretrieve(metadata["downloadUrl"], filePath)
-        log("[DOWNLOAD FINISHED]  "+filePath)
+        print("[FINISHED]  "+filePath)
     except Exception as e:
-        log("[DOWNLOAD ERROR]  "+str(e))
+        print("[ERROR]  "+str(e))
         exit(1)
 
     # start application
-    log("[LAUNCH]  "+filePath)
+    print("[OPEN]  "+filePath)
     subprocess.call(["xdg-open", filePath])
 
     # set up file watcher
-    log("[SETUP FILE WATCHER]  " + DOWNLOAD_DIR)
+    print("[SETUP FILE WATCHER]  " + DOWNLOAD_DIR)
     wm = pyinotify.WatchManager()
     wm.add_watch(DOWNLOAD_DIR, pyinotify.IN_MODIFY | pyinotify.IN_CLOSE_WRITE)
     notifier = pyinotify.ThreadedNotifier(wm,
-        FileChangedHandler( dict={
-            "fileId": metadata["fileId"],
-            "fileName": metadata["fileName"],
-            "filePath": filePath,
-            "mimeType": metadata["mimeType"],
-            "downloadUrl": metadata["downloadUrl"],
-            "companionActionCallbackUrl": metadata["companionActionCallbackUrl"],
-            "uploadUrl": metadata["uploadUrl"],
-            "fileMd5": md5(filePath)
-        })
+        FileChangedHandler(
+            #fileId = metadata["fileId"],
+            fileName = metadata["fileName"],
+            filePath = filePath,
+            #mimeType = metadata["mimeType"],
+            downloadUrl = metadata["downloadUrl"],
+            #companionActionCallbackUrl = metadata["companionActionCallbackUrl"],
+            uploadUrl = metadata["uploadUrl"],
+            fileMd5 = md5(filePath)
+        )
     )
     notifier.start()
 
     # show GUI
-    log("[SHOW GUI]")
-    app = wx.App()
-    window = CompanionWindow(metadata["fileName"])
-    window.Show()
-    app.MainLoop()
+    print("[SHOW NOTIFICATION]")
+    notification = Notify.Notification.new("Watching for changes", metadata["fileName"])
+    notification.connect("closed", notificationClosed)
+    notification.add_action("clicked", "End File Monitoring", endFileWatcher)
+    notification.show()
+    Gtk.main()
 
-    # kill file watcher after window closed
-    log("[EXIT]")
+    # kill file watcher after notification closed
+    print("[EXIT]")
     notifier.stop()
     exit(0)
 
