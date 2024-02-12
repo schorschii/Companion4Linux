@@ -50,7 +50,7 @@ Atlassian's first attempt was that the web browser connects via websocket to "at
 
 SSL encryption between Browser and Companion App (through "atlassian-domain-for-localhost-connections-only.com") is not supported anymore as described [here](https://jira.atlassian.com/browse/CONFSERVER-59244?src=confmacro&_ga=2.138774577.300479270.1578747514-1264684236.1567087366).
 
-This technology not supported anymore by Companion4Linux.
+This technology is not supported anymore by Companion4Linux.
 
 ### 2. Local Web Server Without SSL
 The web browser connects via websocket to 127.0.0.1. This technology was replaced with a new technology (case 3) in Atlassian Companion App v1.0.0 / Confluence 7.4.0 in order to support terminal server environments (see [here](https://confluence.atlassian.com/doc/atlassian-companion-app-release-notes-958455712.html)).
@@ -60,4 +60,4 @@ This method is handled by "companion.py".
 ### 3. Via Protocol Scheme »atlassian-companion:«
 The companion app waits until called from browser with a command line argument like »atlassian-companion:{"link":"https://....}«.
 
-This method os handled by "companion2.py".
+This method is handled by "companion2.py".
