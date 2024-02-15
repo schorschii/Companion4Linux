@@ -70,6 +70,11 @@ class FileChangedHandler(pyinotify.ProcessEvent):
                     "X-Atlassian-Token": "nocheck"
                     #"User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) AtlassianCompanion/1.0.0 Chrome/61.0.3163.100 Electron/2.1.0-unsupported.20180809 Safari/537.36"
                 }
+
+                # show desktop notification
+                notificationFinished = Notify.Notification.new("Uploading file...", self._fileName)
+                notificationFinished.show()
+
                 with open(self._filePath, 'rb') as f:
                     result = requests.post(
                         self._uploadUrl,
@@ -81,11 +86,11 @@ class FileChangedHandler(pyinotify.ProcessEvent):
                     )
                     print(result, result.text)
 
-                    # show desktop notification
+                    # update desktop notification
                     if(result.status_code == 200):
-                        notificationFinished = Notify.Notification.new(APP_NAME, "File Uploaded Successfully")
+                        notificationFinished.update("File uploaded successfully", self._fileName)
                     else:
-                        notificationFinished = Notify.Notification.new(APP_NAME, "File Upload Failed")
+                        notificationFinished.update("File upload failed", self._fileName)
                     notificationFinished.show()
 
 # hashing functions
@@ -171,10 +176,10 @@ def main():
 
     # show GUI
     print("[SHOW NOTIFICATION]")
-    notification = Notify.Notification.new("Watching for changes", metadata["fileName"])
-    notification.connect("closed", notificationClosed)
-    notification.add_action("clicked", "End File Monitoring", endFileWatcher)
-    notification.show()
+    notificationWatching = Notify.Notification.new("Companion watching for changes", metadata["fileName"])
+    notificationWatching.connect("closed", notificationClosed)
+    notificationWatching.add_action("clicked", "End File Monitoring", endFileWatcher)
+    notificationWatching.show()
     Gtk.main()
 
     # kill file watcher after notification closed
