@@ -1,0 +1,25 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2024-02-15 21:00+0100\n"
+"PO-Revision-Date: 2024-02-15 21:00+0100\n"
+"Last-Translator: Georg Sieber\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de\n"
+
+msgid "Companion watching for changes"
+msgstr "Companion wartet auf Änderungen"
+
+msgid "End file monitoring"
+msgstr "Dateibeobachtung beenden"
+
+msgid "Uploading file..."
+msgstr "Datei wird hochgeladen..."
+
+msgid "File uploaded successfully"
+msgstr "Datei erfolgreich hochgeladen"
+
+msgid "File upload failed"
+msgstr "Dateiupload fehlgeschlagen"

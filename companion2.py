@@ -16,6 +16,7 @@ import pathlib
 import hashlib
 import requests
 import subprocess
+import gettext
 import json
 import sys, os
 
@@ -25,7 +26,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Notify, Gtk
 
 
-APP_NAME        = "Companion App"
+APP_NAME        = "Companion4Linux"
 PROTOCOL_SCHEME = "atlassian-companion:"
 DOWNLOAD_DIR    = str(pathlib.Path.home()) + "/.cache/companion/tmp" # temp dir for downloading files
 
@@ -72,7 +73,7 @@ class FileChangedHandler(pyinotify.ProcessEvent):
                 }
 
                 # show desktop notification
-                notificationFinished = Notify.Notification.new("Uploading file...", self._fileName)
+                notificationFinished = Notify.Notification.new(gettext.gettext("Uploading file..."), self._fileName)
                 notificationFinished.show()
 
                 with open(self._filePath, 'rb') as f:
@@ -88,9 +89,9 @@ class FileChangedHandler(pyinotify.ProcessEvent):
 
                     # update desktop notification
                     if(result.status_code == 200):
-                        notificationFinished.update("File uploaded successfully", self._fileName)
+                        notificationFinished.update(gettext.gettext("File uploaded successfully"), self._fileName)
                     else:
-                        notificationFinished.update("File upload failed", self._fileName)
+                        notificationFinished.update(gettext.gettext("File upload failed"), self._fileName)
                     notificationFinished.show()
 
 # hashing functions
@@ -113,10 +114,20 @@ def notificationClosed(notification):
 
 # main program
 def main():
+    # init notifications
     Notify.init(APP_NAME)
-    urlToHandle = None
+
+    # init translations
+    if(os.path.isdir("locales")):
+        # use translations in working dir if avail, otherwise /usr/share/locales is used
+        gettext.bindtextdomain(APP_NAME, "locales")
+        print("using local locales")
+    else:
+        print("using global locales")
+    gettext.textdomain(APP_NAME)
 
     # check parameter
+    urlToHandle = None
     for arg in sys.argv:
         if(arg.startswith(PROTOCOL_SCHEME)):
             urlToHandle = arg
@@ -176,9 +187,12 @@ def main():
 
     # show GUI
     print("[SHOW NOTIFICATION]")
-    notificationWatching = Notify.Notification.new("Companion watching for changes", metadata["fileName"])
+    notificationWatching = Notify.Notification.new(
+        gettext.gettext("Companion watching for changes"),
+        metadata["fileName"]
+    )
     notificationWatching.connect("closed", notificationClosed)
-    notificationWatching.add_action("clicked", "End File Monitoring", endFileWatcher)
+    notificationWatching.add_action("clicked", gettext.gettext("End file monitoring"), endFileWatcher)
     notificationWatching.show()
     Gtk.main()
 
