@@ -1,8 +1,8 @@
-LANGFILES := $(shell find locales/ -name "*.po")
+LANGFILES := $(shell find locale/ -name "*.po")
 
 .DEFAULT_GOAL := default
 .PHONY: default
 default: $(LANGFILES:.po=.mo)
 
-locales/%/LC_MESSAGES/Companion4Linux.mo : locales/%/LC_MESSAGES/Companion4Linux.po
+locale/%/LC_MESSAGES/Companion4Linux.mo : locale/%/LC_MESSAGES/Companion4Linux.po
 	msgfmt $< -o $@

@@ -118,9 +118,9 @@ def main():
     Notify.init(APP_NAME)
 
     # init translations
-    if(os.path.isdir("locales")):
-        # use translations in working dir if avail, otherwise /usr/share/locales is used
-        gettext.bindtextdomain(APP_NAME, "locales")
+    if(os.path.isdir("locale")):
+        # use translations in working dir if avail, otherwise /usr/share/locale is used
+        gettext.bindtextdomain(APP_NAME, "locale")
         print("using local locales")
     else:
         print("using global locales")
