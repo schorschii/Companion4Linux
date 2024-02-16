@@ -10,7 +10,7 @@ When reporting bugs, please append a detailed description of the error including
 
 ## Debian Package Installation (Debian/Ubuntu/Mint)
 1. Download and install the `.deb` package from the [latest release](https://github.com/schorschii/companion-linux/releases) on Github.
-2. Open Confluence in your web browser, open a document and click on "Edit". Your browser will ask you now to allow executing Companion4Linux.
+2. Open Confluence in your web browser, open a document and click on "Edit". Your browser will ask you now to allow executing Companion4Linux. A desktop notification will appear informing you about the current companion activity.
 
 ## Manual Installation (Debian/Ubuntu/Mint)
 ```bash
@@ -24,9 +24,10 @@ cp companion-protocol-handler.desktop /usr/share/applications
 update-desktop-database
 ```
 
-Open Confluence in your web browser, open a document and click on "Edit". Your browser will ask you now to allow executing Companion4Linux.
+Open Confluence in your web browser, open a document and click on "Edit". Your browser will ask you now to allow executing Companion4Linux. A desktop notification will appear informing you about the current companion activity.
 
 **Further hints:**
+- File monitoring will be cancelled as soon as the desktop notification is closed. Make sure that the notification is visible until you finished editing your document.
 - Temporary files will be saved in `~/.cache/companion/tmp` and config files in `~/.config/companion`. Please ensure that you have write permissions in that directories.
 - When executing `firefox` in the terminal, you can see the Companion4Linux output. Check this output for troubleshooting and before reporting bugs.
 
