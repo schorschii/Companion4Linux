@@ -12,10 +12,13 @@ When reporting bugs, please append a detailed description of the error including
 1. Download and install the `.deb` package from the [latest release](https://github.com/schorschii/companion-linux/releases) on Github.
 2. Open Confluence in your web browser, open a document and click on "Edit". Your browser will ask you now to allow executing Companion4Linux. A desktop notification will appear informing you about the current companion activity.
 
-## Manual Installation (Debian/Ubuntu/Mint)
+## Manual Installation
 ```bash
-# install required Python packages
+# install required Python packages (Debian/Ubuntu/Mint)
 apt install python3-distutils python3-pyinotify
+
+# install required Python packages (Fedora)
+dnf install -y python3-distutils-extra python3-inotify
 
 # set execution rights and copy `companion2.py` (for Confluence 7.4.0 and newer)
 chmod +x companion2.py
